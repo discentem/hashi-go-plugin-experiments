@@ -1,2 +1,6 @@
 basic
+plugin/shard
+!plugin/shard.go
+
 plugin/greeter
+!plugin/greeter/greeter_implementation.go

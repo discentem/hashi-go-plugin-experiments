@@ -27,18 +27,13 @@ var (
 	pluginMap = map[string]plugin.Plugin{
 		"greeter":    &commons.GreeterPlugin{},
 		"greeterToo": &commons.GreeterPlugin{},
+		"shard":      &commons.ShardPlugin{},
 	}
 )
 
 func main() {
-	// Create an hclog.Logger
-	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "plugin",
-		Output: os.Stdout,
-		Level:  hclog.Debug,
-	})
 
-	plugs, err := plugin.Discover("*", "./plugin/")
+	plugs, err := plugin.Discover("*", "./plugin/greeter")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,6 +41,12 @@ func main() {
 		if strings.HasSuffix(plugs[i], ".go") {
 			continue
 		}
+		// Create an hclog.Logger
+		logger := hclog.New(&hclog.LoggerOptions{
+			Name:   "plugin",
+			Output: os.Stdout,
+			Level:  hclog.Debug,
+		})
 		// We're a host! Start by launching the plugin process.
 		client := plugin.NewClient(&plugin.ClientConfig{
 			HandshakeConfig: handshakeConfig,
@@ -53,7 +54,6 @@ func main() {
 			Cmd:             exec.Command(plugs[i]),
 			Logger:          logger,
 		})
-		defer client.Kill()
 
 		// Connect via RPC
 		rpcClient, err := client.Client()
@@ -74,7 +74,7 @@ func main() {
 			greeter := raw.(commons.Greeter)
 			s, err := greeter.Greet()
 			if err != nil {
-				log.Fatal(err)
+				continue
 			}
 			fmt.Println(s)
 			f, err := greeter.GreetFancy()
@@ -83,6 +83,50 @@ func main() {
 			}
 			fmt.Println(f)
 		}
+	}
+
+	plugs, err = plugin.Discover("*", "./plugin/shard")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for i := range plugs {
+		if strings.HasSuffix(plugs[i], ".go") {
+			continue
+		}
+		// Create an hclog.Logger
+		logger := hclog.New(&hclog.LoggerOptions{
+			Name:   "plugin",
+			Output: os.Stdout,
+			Level:  hclog.Debug,
+		})
+		// We're a host! Start by launching the plugin process.
+		client := plugin.NewClient(&plugin.ClientConfig{
+			HandshakeConfig: handshakeConfig,
+			Plugins:         pluginMap,
+			Cmd:             exec.Command(plugs[i]),
+			Logger:          logger,
+		})
+		defer client.Kill()
+
+		// Connect via RPC
+		rpcClient, err := client.Client()
+		if err != nil {
+			log.Fatal(err)
+		}
+		raw, err := rpcClient.Dispense("shard")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// We should have a Shard now! This feels like a normal interface
+		// implementation but is in fact over an RPC connection.
+		shard := raw.(commons.Shard)
+		s, err := shard.Get()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(s)
 	}
 
 }
