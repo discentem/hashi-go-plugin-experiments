@@ -24,6 +24,20 @@ func (g *GreeterHello) GreetFancy() (string, error) {
 	return "Hello, fancy pants!", nil
 }
 
+type GreeterHelloToo struct {
+	logger hclog.Logger
+}
+
+func (g *GreeterHelloToo) Greet() (string, error) {
+	g.logger.Debug("message from GreeterHelloToo.Greet")
+	return "Hello!", nil
+}
+
+func (g *GreeterHelloToo) GreetFancy() (string, error) {
+	g.logger.Debug("message from GreeterHelloToo.GreetFancy")
+	return "Hello, fancy pants!", nil
+}
+
 // handshakeConfigs are used to just do a basic handshake between
 // a plugin and host. If the handshake fails, a user friendly error is shown.
 // This prevents users from executing bad plugins or executing a plugin
@@ -44,9 +58,13 @@ func main() {
 	greeter := &GreeterHello{
 		logger: logger,
 	}
+	greeterToo := &GreeterHelloToo{
+		logger: logger,
+	}
 	// pluginMap is the map of plugins we can dispense.
 	var pluginMap = map[string]plugin.Plugin{
-		"greeter": &commons.GreeterPlugin{Impl: greeter},
+		"greeter":    &commons.GreeterPlugin{Impl: greeter},
+		"greeterToo": &commons.GreeterPlugin{Impl: greeterToo},
 	}
 
 	logger.Debug("message from plugin", "foo", "bar")

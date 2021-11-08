@@ -25,7 +25,8 @@ var (
 	}
 
 	pluginMap = map[string]plugin.Plugin{
-		"greeter": &commons.GreeterPlugin{},
+		"greeter":    &commons.GreeterPlugin{},
+		"greeterToo": &commons.GreeterPlugin{},
 	}
 )
 
@@ -61,24 +62,27 @@ func main() {
 		}
 
 		// Request the plugin
-		raw, err := rpcClient.Dispense("greeter")
-		if err != nil {
-			log.Fatal(err)
-		}
 
-		// We should have a Greeter now! This feels like a normal interface
-		// implementation but is in fact over an RPC connection.
-		greeter := raw.(commons.Greeter)
-		s, err := greeter.Greet()
-		if err != nil {
-			log.Fatal(err)
+		for _, p := range []string{"greeter", "greeterToo"} {
+			raw, err := rpcClient.Dispense(p)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// We should have a Greeter now! This feels like a normal interface
+			// implementation but is in fact over an RPC connection.
+			greeter := raw.(commons.Greeter)
+			s, err := greeter.Greet()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(s)
+			f, err := greeter.GreetFancy()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(f)
 		}
-		fmt.Println(s)
-		f, err := greeter.GreetFancy()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(f)
 	}
 
 }
